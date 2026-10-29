@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ky">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кыргыз кеп таануу</title>
+<meta name="description" content="Kyrgyz speech recognition in the browser (Vosk). Audio never leaves your device.">
+<style>
+  :root {
+    --bg: #f7f7f5; --card: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
+    --accent: #c8102e; --accent-text: #ffffff; --partial: #8a8a84; --ok: #2e7d32;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161615; --card: #20201e; --text: #ececE8; --muted: #a2a29b; --line: #34342f;
+            --accent: #e0405a; --partial: #8d8d86; --ok: #66bb6a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  button, label.btn { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+         padding: 10px 18px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled, label.btn.disabled { opacity: .45; cursor: not-allowed; }
+  input[type=file] { display: none; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .rec .dot { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  #status { color: var(--muted); font-size: .92rem; min-height: 1.4em; margin-top: 12px; }
+  #status.ok { color: var(--ok); }
+  #out { min-height: 160px; white-space: pre-wrap; font-size: 1.15rem; line-height: 1.6; }
+  #out .partial { color: var(--partial); }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: var(--muted); font-size: .9rem; }
+  .toolbar button { padding: 4px 12px; font-size: .85rem; }
+  footer { color: var(--muted); font-size: .85rem; }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Кыргыз кеп таануу</h1>
+  <p class="sub">Kyrgyz speech recognition that runs entirely in your browser. Audio never leaves your device.</p>
+
+  <section class="card">
+    <div class="row">
+      <button id="mic" class="primary" disabled><span class="dot"></span><span id="micLabel">Микрофон / Microphone</span></button>
+      <label class="btn disabled" id="fileLabel">Файл / Audio file<input type="file" id="file" accept="audio/*,video/*" disabled></label>
+    </div>
+    <div id="status">Модель жүктөлүүдө… / Loading model (≈40 MB, cached after the first visit)…</div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar"><span>Таанылган текст / Recognized text</span>
+      <span><button id="copy">Көчүрүү / Copy</button> <button id="clear">Тазалоо / Clear</button></span></div>
+    <div id="out" aria-live="polite"></div>
+  </section>
+
+  <footer>
+    Model: Kyrgyz Vosk small model (Kaldi TDNN-F), Ala-Too International University.
+    Licence: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> (non-commercial).
+    Recognition by <a href="https://github.com/ccoreilly/vosk-browser">vosk-browser</a> / <a href="https://alphacephei.com/vosk/">Vosk</a>.
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js"></script>
+<script>
+const MODEL_URL = 'model/vosk-model-ky-small.tar.gz';
+const $ = id => document.getElementById(id);
+const out = $('out'), status = $('status');
+let model, final = '', partial = '';
+
+function render() {
+  out.textContent = final;
+  if (partial) {
+    const s = document.createElement('span');
+    s.className = 'partial';
+    s.textContent = (final && !final.endsWith('\n') ? ' ' : '') + partial;
+    out.appendChild(s);
+  }
+}
+function addFinal(text) {
+  if (!text) return;
+  final += (final && !final.endsWith('\n') ? ' ' : '') + text;
+  partial = '';
+  render();
+}
+function setStatus(text, ok) { status.textContent = text; status.className = ok ? 'ok' : ''; }
+
+function newRecognizer(sampleRate) {
+  const rec = new model.KaldiRecognizer(sampleRate);
+  rec.on('result', m => addFinal(m.result.text));
+  rec.on('partialresult', m => { partial = m.result.partial; render(); });
+  return rec;
+}
+
+// ---- microphone
+let mic = null;
+async function startMic() {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+  const ctx = new AudioContext();
+  const rec = newRecognizer(ctx.sampleRate);
+  const src = ctx.createMediaStreamSource(stream);
+  const proc = ctx.createScriptProcessor(4096, 1, 1);
+  proc.onaudioprocess = e => { try { rec.acceptWaveform(e.inputBuffer); } catch (err) { console.error(err); } };
+  src.connect(proc); proc.connect(ctx.destination);
+  mic = { stream, ctx, rec, proc, src };
+  $('mic').classList.add('rec'); $('micLabel').textContent = 'Токтотуу / Stop';
+  setStatus('Угуп жатат… / Listening…');
+}
+function stopMic() {
+  const m = mic; mic = null;
+  m.proc.disconnect(); m.src.disconnect();
+  m.stream.getTracks().forEach(t => t.stop());
+  m.rec.retrieveFinalResult();
+  setTimeout(() => { m.rec.remove(); m.ctx.close(); }, 1500);
+  $('mic').classList.remove('rec'); $('micLabel').textContent = 'Микрофон / Microphone';
+  setStatus('Даяр / Ready', true);
+}
+$('mic').onclick = () => (mic ? stopMic() : startMic().catch(e => setStatus('Микрофон жеткиликсиз / Microphone unavailable: ' + e.message)));
+
+// ---- file: decode, resample to 16 kHz mono, normalize the level, feed in chunks
+$('file').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  setStatus('Иштетилүүдө… / Processing ' + f.name + '…');
+  try {
+    const decoded = await new AudioContext().decodeAudioData(await f.arrayBuffer());
+    const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+    const s = off.createBufferSource(); s.buffer = decoded; s.connect(off.destination); s.start();
+    const pcm = (await off.startRendering()).getChannelData(0);
+    // The model was trained on loud recordings; very quiet files otherwise come out empty.
+    let peak = 0; for (const v of pcm) peak = Math.max(peak, Math.abs(v));
+    if (peak > 0) { const g = 0.89 / peak; for (let i = 0; i < pcm.length; i++) pcm[i] *= g; }
+    const rec = newRecognizer(16000);
+    // The worker answers every chunk with one result or partialresult event, and
+    // retrieveFinalResult with one more result: the file is done after chunks + 1 events.
+    const chunks = Math.ceil(pcm.length / 8000);
+    let events = 0;
+    const done = new Promise(res => {
+      const count = () => { if (++events === chunks + 1) setTimeout(res, 0); };
+      rec.on('result', count); rec.on('partialresult', count);
+    });
+    for (let i = 0; i < pcm.length; i += 8000) rec.acceptWaveformFloat(pcm.slice(i, i + 8000), 16000);
+    rec.retrieveFinalResult();
+    await done;
+    final += final ? '\n' : '';
+    rec.remove();
+    setStatus('Даяр / Ready: ' + f.name, true);
+  } catch (err) { setStatus('Ката / Error: ' + err.message); }
+};
+
+$('copy').onclick = () => navigator.clipboard.writeText(final);
+$('clear').onclick = () => { final = partial = ''; render(); };
+
+Vosk.createModel(MODEL_URL).then(m => {
+  model = m;
+  $('mic').disabled = false; $('file').disabled = false; $('fileLabel').classList.remove('disabled');
+  setStatus('Даяр / Ready', true);
+}).catch(e => setStatus('Модель жүктөлгөн жок / Model failed to load: ' + e.message));
+</script>
+</body>
+</html>
