@@ -7,7 +7,7 @@ never uploaded.
 **Live demo:** https://data-analysis-and-research-institute.github.io/hiva-vosk-asr-alpha/
 
 - Microphone input with live text, or upload an audio file (any format the browser can decode).
-- The model (about 41 MB) downloads on the first visit and is then cached by the browser.
+- The model (about 60 MB) downloads on the first visit and is then cached by the browser.
 - Output is lower-case Kyrgyz Cyrillic without punctuation; numbers come out as words.
 
 ## Model
@@ -18,17 +18,17 @@ with a lookahead graph, also usable on phones and a Raspberry Pi through the reg
 Training data:
 - about 255 hours of read speech recorded through hiva.alatoo.edu.kg (Ala-Too International University);
 - the train and dev splits of FLEURS ky_kg;
-- Common Voice Kyrgyz.
+- Common Voice 27.0 Kyrgyz (test speakers and sentences excluded).
 
-The language model is a 3-gram built from the Leipzig Corpora Collection, the Manas-UdS Kyrgyz Corpus and the Kyrgyz News Corpus.
+The lexicon has about 676,000 words. The language model is a 3-gram built from the Leipzig Corpora Collection, the Manas-UdS Kyrgyz Corpus and the Kyrgyz News Corpus.
 
 Word error rate (lower is better):
 
 | Test set | WER |
 |---|---|
-| Common Voice 17 test | 16.4% |
-| FLEURS test (sentences without digits) | 15.8% |
-| HIVA test (unseen speakers and sentences) | 28.8% |
+| Common Voice 17 test | 14.5% |
+| FLEURS test (sentences without digits) | 14.0% |
+| HIVA test (unseen speakers and sentences) | 27.5% |
 
 This is an alpha release. A larger server-side model is more accurate.
 
