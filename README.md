@@ -32,6 +32,19 @@ Word error rate (lower is better):
 
 This is an alpha release. A larger server-side model is more accurate.
 
+## Experimental Zipformer page
+
+`zipformer/` is a second page with a streaming Zipformer transducer (icefall, about 23M parameters,
+int8) running in [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) WebAssembly; the download is
+about 42 MB. Text appears while you speak. It has no separate language model and is less accurate
+than the Vosk model:
+
+| Test set | WER |
+|---|---|
+| Common Voice 17 test | 26.7% |
+| FLEURS test (sentences without digits) | 19.9% |
+| HIVA test (unseen speakers and sentences) | 33.1% |
+
 ## Licence
 
 The model and this demo are released under
