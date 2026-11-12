@@ -37,13 +37,14 @@ This is an alpha release. A larger server-side model is more accurate.
 `zipformer/` is a second page with a streaming Zipformer transducer (icefall, about 23M parameters,
 int8) running in [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) WebAssembly; the download is
 about 42 MB. Text appears while you speak. It has no separate language model and is less accurate
-than the Vosk model:
+than the Vosk model. Besides the Vosk training data, it was trained on about 42 h of parliament
+speech labelled automatically (chunks where two Vosk models agree):
 
 | Test set | WER |
 |---|---|
-| Common Voice 17 test | 26.7% |
-| FLEURS test (sentences without digits) | 19.9% |
-| HIVA test (unseen speakers and sentences) | 33.1% |
+| Common Voice 17 test | 21.7% |
+| FLEURS test (sentences without digits) | 16.8% |
+| HIVA test (unseen speakers and sentences) | 30.6% |
 
 ## Licence
 
