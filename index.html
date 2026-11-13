@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Кыргыз кеп таануу</title>
-<meta name="description" content="Kyrgyz speech recognition in the browser (Vosk). Audio never leaves your device.">
+<meta name="description" content="Kyrgyz speech recognition in the browser (streaming Zipformer, sherpa-onnx). Audio never leaves your device.">
 <style>
   :root {
     --bg: #f7f7f5; --card: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
@@ -45,14 +45,14 @@
 <main>
   <h1>Кыргыз кеп таануу</h1>
   <p class="sub">Kyrgyz speech recognition that runs entirely in your browser. Audio never leaves your device.<br>
-  Also try the experimental <a href="zipformer/">streaming Zipformer model</a> (smaller, less accurate).</p>
+  Streaming Zipformer model (≈42 MB); text appears while you speak. The <a href="vosk/">Vosk model page</a> is more accurate (larger download).</p>
 
   <section class="card">
     <div class="row">
       <button id="mic" class="primary" disabled><span class="dot"></span><span id="micLabel">Микрофон / Microphone</span></button>
       <label class="btn disabled" id="fileLabel">Файл / Audio file<input type="file" id="file" accept="audio/*,video/*" disabled></label>
     </div>
-    <div id="status">Модель жүктөлүүдө… / Loading model (≈60 MB, cached after the first visit)…</div>
+    <div id="status">Модель жүктөлүүдө… / Loading model…</div>
   </section>
 
   <section class="card">
@@ -62,18 +62,19 @@
   </section>
 
   <footer>
-    Model: Kyrgyz Vosk small model (Kaldi TDNN-F), Ala-Too International University.
+    Model: Kyrgyz streaming Zipformer transducer, Ala-Too International University.
     Licence: <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> (non-commercial).
-    Recognition by <a href="https://github.com/ccoreilly/vosk-browser">vosk-browser</a> / <a href="https://alphacephei.com/vosk/">Vosk</a>.
+    Recognition by <a href="https://github.com/k2-fsa/sherpa-onnx">sherpa-onnx</a> (WebAssembly).
   </footer>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js"></script>
+<script src="sherpa-onnx-asr.js"></script>
 <script>
-const MODEL_URL = 'model/vosk-model-ky-small.tar.gz';
+// Own scope: the Emscripten script below declares globals such as `out` and `err`.
+(() => {
 const $ = id => document.getElementById(id);
 const out = $('out'), status = $('status');
-let model, final = '', partial = '';
+let recognizer = null, final = '', partial = '';
 
 function render() {
   out.textContent = final;
@@ -85,41 +86,50 @@ function render() {
   }
 }
 function addFinal(text) {
-  if (!text) return;
-  final += (final && !final.endsWith('\n') ? ' ' : '') + text;
   partial = '';
+  if (text) final += (final && !final.endsWith('\n') ? ' ' : '') + text;
   render();
 }
 function setStatus(text, ok) { status.textContent = text; status.className = ok ? 'ok' : ''; }
 
-function newRecognizer(sampleRate) {
-  const rec = new model.KaldiRecognizer(sampleRate);
-  rec.on('result', m => addFinal(m.result.text));
-  rec.on('partialresult', m => { partial = m.result.partial; render(); });
-  return rec;
+// Feed samples (any sample rate; sherpa-onnx resamples to 16 kHz) and update the text.
+// At an endpoint (a pause) the sentence is final and the stream starts over.
+function feed(stream, sampleRate, samples) {
+  stream.acceptWaveform(sampleRate, samples);
+  while (recognizer.isReady(stream)) recognizer.decode(stream);
+  partial = recognizer.getResult(stream).text.trim().toLowerCase();
+  if (recognizer.isEndpoint(stream)) { addFinal(partial); recognizer.reset(stream); }
+  else render();
+}
+function finish(stream, sampleRate) {
+  stream.acceptWaveform(sampleRate, new Float32Array(Math.round(0.66 * sampleRate)));  // flush the last chunk
+  stream.inputFinished();
+  while (recognizer.isReady(stream)) recognizer.decode(stream);
+  addFinal(recognizer.getResult(stream).text.trim().toLowerCase());
+  stream.free();
 }
 
 // ---- microphone
 let mic = null;
 async function startMic() {
-  const stream = await navigator.mediaDevices.getUserMedia({
+  const media = await navigator.mediaDevices.getUserMedia({
     audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
   const ctx = new AudioContext();
-  const rec = newRecognizer(ctx.sampleRate);
-  const src = ctx.createMediaStreamSource(stream);
+  const stream = recognizer.createStream();
+  const src = ctx.createMediaStreamSource(media);
   const proc = ctx.createScriptProcessor(4096, 1, 1);
-  proc.onaudioprocess = e => { try { rec.acceptWaveform(e.inputBuffer); } catch (err) { console.error(err); } };
+  proc.onaudioprocess = e => feed(stream, ctx.sampleRate, new Float32Array(e.inputBuffer.getChannelData(0)));
   src.connect(proc); proc.connect(ctx.destination);
-  mic = { stream, ctx, rec, proc, src };
+  mic = { media, ctx, stream, proc, src };
   $('mic').classList.add('rec'); $('micLabel').textContent = 'Токтотуу / Stop';
   setStatus('Угуп жатат… / Listening…');
 }
 function stopMic() {
   const m = mic; mic = null;
   m.proc.disconnect(); m.src.disconnect();
-  m.stream.getTracks().forEach(t => t.stop());
-  m.rec.retrieveFinalResult();
-  setTimeout(() => { m.rec.remove(); m.ctx.close(); }, 1500);
+  m.media.getTracks().forEach(t => t.stop());
+  finish(m.stream, m.ctx.sampleRate);
+  m.ctx.close();
   $('mic').classList.remove('rec'); $('micLabel').textContent = 'Микрофон / Microphone';
   setStatus('Даяр / Ready', true);
 }
@@ -135,23 +145,16 @@ $('file').onchange = async e => {
     const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
     const s = off.createBufferSource(); s.buffer = decoded; s.connect(off.destination); s.start();
     const pcm = (await off.startRendering()).getChannelData(0);
-    // The model was trained on loud recordings; very quiet files otherwise come out empty.
     let peak = 0; for (const v of pcm) peak = Math.max(peak, Math.abs(v));
     if (peak > 0) { const g = 0.89 / peak; for (let i = 0; i < pcm.length; i++) pcm[i] *= g; }
-    const rec = newRecognizer(16000);
-    // The worker answers every chunk with one result or partialresult event, and
-    // retrieveFinalResult with one more result: the file is done after chunks + 1 events.
-    const chunks = Math.ceil(pcm.length / 8000);
-    let events = 0;
-    const done = new Promise(res => {
-      const count = () => { if (++events === chunks + 1) setTimeout(res, 0); };
-      rec.on('result', count); rec.on('partialresult', count);
-    });
-    for (let i = 0; i < pcm.length; i += 8000) rec.acceptWaveformFloat(pcm.slice(i, i + 8000), 16000);
-    rec.retrieveFinalResult();
-    await done;
+    const stream = recognizer.createStream();
+    for (let i = 0; i < pcm.length; i += 16000) {     // 1 s at a time, yielding so the page stays responsive
+      feed(stream, 16000, pcm.subarray(i, i + 16000));
+      setStatus(`Иштетилүүдө… / Processing ${f.name}: ${Math.round(100 * i / pcm.length)}%`);
+      await new Promise(r => setTimeout(r, 0));
+    }
+    finish(stream, 16000);
     final += final ? '\n' : '';
-    rec.remove();
     setStatus('Даяр / Ready: ' + f.name, true);
   } catch (err) { setStatus('Ката / Error: ' + err.message); }
 };
@@ -159,11 +162,23 @@ $('file').onchange = async e => {
 $('copy').onclick = () => navigator.clipboard.writeText(final);
 $('clear').onclick = () => { final = partial = ''; render(); };
 
-Vosk.createModel(MODEL_URL).then(m => {
-  model = m;
-  $('mic').disabled = false; $('file').disabled = false; $('fileLabel').classList.remove('disabled');
-  setStatus('Даяр / Ready', true);
-}).catch(e => setStatus('Модель жүктөлгөн жок / Model failed to load: ' + e.message));
+// The WASM module and the model files (packed into sherpa-onnx-wasm-main-asr.data) load here.
+window.Module = {
+  locateFile: (path, dir = '') => dir + path,
+  setStatus: s => {
+    const m = s.match(/Downloading data\.\.\. \((\d+)\/(\d+)\)/);
+    if (m) setStatus(`Модель жүктөлүүдө… / Loading model: ${(m[1] / 1048576).toFixed(1)} / ${(m[2] / 1048576).toFixed(1)} MB`);
+  },
+  onRuntimeInitialized: () => {
+    try {
+      recognizer = createOnlineRecognizer(window.Module);
+      $('mic').disabled = false; $('file').disabled = false; $('fileLabel').classList.remove('disabled');
+      setStatus('Даяр / Ready', true);
+    } catch (e) { setStatus('Модель жүктөлгөн жок / Model failed to load: ' + e.message); }
+  },
+};
+})();
 </script>
+<script src="sherpa-onnx-wasm-main-asr.js"></script>
 </body>
 </html>
