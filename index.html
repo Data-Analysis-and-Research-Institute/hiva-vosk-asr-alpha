@@ -9,16 +9,27 @@
   :root {
     --bg: #f7f7f5; --card: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
     --accent: #c8102e; --accent-text: #ffffff; --partial: #8a8a84; --ok: #2e7d32;
+    --err-sub-bg: #fde3e1; --err-sub: #b3261e; --err-ins-bg: #fff0d1; --err-ins: #8a5300;
+    --err-del-bg: #e2ecfb; --err-del: #1c5cab;
+    /* chart roles (reference data-viz palette, light) */
+    --chart-surface: #ffffff; --grid: #ebebe7; --axis: #8a8a84;
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
   }
   @media (prefers-color-scheme: dark) {
     :root { --bg: #161615; --card: #20201e; --text: #ececE8; --muted: #a2a29b; --line: #34342f;
-            --accent: #e0405a; --partial: #8d8d86; --ok: #66bb6a; }
+            --accent: #e0405a; --partial: #8d8d86; --ok: #66bb6a;
+            --err-sub-bg: #4a2422; --err-sub: #ffb4ab; --err-ins-bg: #45361a; --err-ins: #ffd28a;
+            --err-del-bg: #1f3350; --err-del: #a9c8f5;
+            --chart-surface: #20201e; --grid: #2f2f2b; --axis: #8d8d86;
+            --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
          font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
   h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.1rem; margin: 24px 0 8px; }
+  h3 { font-size: 1rem; margin: 20px 0 6px; }
   .sub { color: var(--muted); margin: 0 0 24px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
   .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
@@ -32,19 +43,67 @@
   @keyframes pulse { 50% { opacity: .3; } }
   #status { color: var(--muted); font-size: .92rem; min-height: 1.4em; margin-top: 12px; }
   #status.ok { color: var(--ok); }
-  #out { min-height: 160px; white-space: pre-wrap; font-size: 1.15rem; line-height: 1.6; }
+  #out { min-height: 2.4em; white-space: pre-wrap; font-size: 1.15rem; line-height: 1.6; }
+  #out:empty::before { content: attr(data-hint); color: var(--muted); font-size: .95rem; }
   #out .partial { color: var(--partial); }
-  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: var(--muted); font-size: .9rem; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+             margin-bottom: 8px; color: var(--muted); font-size: .9rem; }
   .toolbar button { padding: 4px 12px; font-size: .85rem; }
   .samples { display: flex; flex-wrap: wrap; gap: 8px; }
   .samples button { padding: 6px 14px; font-size: .9rem; }
   .samples button.playing { border-color: var(--accent); color: var(--accent); }
-  #ref { margin-top: 12px; font-size: .95rem; min-height: 1.4em; }
-  #ref b { font-weight: 600; color: var(--muted); }
   .note { color: var(--muted); font-size: .85rem; margin: 12px 0 0; }
   footer { color: var(--muted); font-size: .85rem; }
-  .sub a, .note a { color: inherit; }
-  footer a { color: inherit; }
+  .sub a, .note a, footer a, .research a { color: inherit; }
+
+  /* results */
+  .result { border-top: 1px solid var(--line); padding: 14px 0 6px; }
+  .result:first-child { border-top: 0; padding-top: 4px; }
+  .result .meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: .85rem; }
+  .wer { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+  .words { font-size: 1.12rem; line-height: 2.1; margin: 4px 0; }
+  .w { border-radius: 4px; padding: 1px 2px; }
+  .words.clickable .w { cursor: pointer; border-bottom: 1px dashed var(--line); }
+  .words.clickable .w:hover { background: var(--line); }
+  .w.sub { background: var(--err-sub-bg); color: var(--err-sub); text-decoration: underline wavy; text-underline-offset: 4px; }
+  .w.ins { background: var(--err-ins-bg); color: var(--err-ins); text-decoration: line-through; }
+  .w.del { background: var(--err-del-bg); color: var(--err-del); }
+  .w.del::before { content: "["; } .w.del::after { content: "]"; }
+  .fix { font-size: .78em; color: var(--muted); vertical-align: super; margin: 0 3px 0 1px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; color: var(--muted); margin: 6px 0; }
+  .legend .w { font-size: .9rem; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: .88rem; color: var(--muted); margin: 6px 0; }
+  .tools button { padding: 3px 10px; font-size: .85rem; }
+  .counter { display: inline-flex; align-items: center; gap: 6px; }
+  .counter b { min-width: 1.5em; text-align: center; color: var(--text); font-variant-numeric: tabular-nums; }
+  textarea { width: 100%; font: inherit; font-size: 1rem; padding: 8px 10px; border: 1px solid var(--line);
+             border-radius: 8px; background: var(--bg); color: var(--text); resize: vertical; margin-top: 6px; }
+
+  /* research */
+  details.research > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  details.research > summary::-webkit-details-marker { display: none; }
+  details.research > summary::after { content: "▸"; color: var(--muted); transition: transform .2s; }
+  details.research[open] > summary::after { transform: rotate(90deg); }
+  .research p, .research li { font-size: .95rem; }
+  .research ul { padding-left: 20px; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+  th, td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+  tr.best td { font-weight: 600; }
+  .tablewrap { overflow-x: auto; }
+  .chart { position: relative; margin: 8px 0 4px; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart text { font: 12px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: var(--muted); }
+  .chart .lbl { fill: var(--text); }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .85rem; color: var(--muted); margin: 4px 0; }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .chart-legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .chart-legend i.dash { background: none !important; border-top: 2px dashed; height: 0; }
+  .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+         padding: 6px 10px; font-size: .82rem; box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; display: none; z-index: 2; }
+  .tip b { font-weight: 600; }
+  .caption { color: var(--muted); font-size: .85rem; margin: 2px 0 12px; }
 </style>
 </head>
 <body>
@@ -64,16 +123,35 @@
   <section class="card">
     <div class="toolbar"><span>Мисалдар / Samples</span></div>
     <div class="samples" id="samples"></div>
-    <div id="ref"></div>
     <p class="note">Short clips from the public <a href="https://huggingface.co/datasets/google/fleurs">FLEURS</a> (CC BY 4.0)
       and <a href="https://commonvoice.mozilla.org/ky">Common Voice</a> (CC0) test sets, not used in training.
-      The text appears while the clip plays.</p>
+      The text appears while the clip plays; then it is compared with the correct sentence.</p>
   </section>
 
   <section class="card">
-    <div class="toolbar"><span>Таанылган текст / Recognized text</span>
+    <div class="toolbar"><span>Азыр / Now</span></div>
+    <div id="out" aria-live="polite" data-hint="Speak, choose a file or play a sample."></div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar"><span>Натыйжалар / Results</span>
       <span><button id="copy">Көчүрүү / Copy</button> <button id="clear">Тазалоо / Clear</button></span></div>
-    <div id="out" aria-live="polite"></div>
+    <div class="legend">
+      <span><span class="w sub">сөз</span><span class="fix">туурасы</span> wrong word (correct one above)</span>
+      <span><span class="w ins">сөз</span> extra word</span>
+      <span><span class="w del">сөз</span> missed word</span>
+    </div>
+    <div id="results"></div>
+    <p class="note">For your own recordings: click a word to mark it <b>wrong</b>, click again for <b>extra</b>, again to reset;
+      count the words it <b>missed</b>; or type what you actually said and the comparison is done for you.
+      Word error rate = (wrong + extra + missed) / words actually said.</p>
+  </section>
+
+  <section class="card">
+    <details class="research" id="research">
+      <summary>Изилдөө / Research: data, training and results</summary>
+      <div id="researchBody"></div>
+    </details>
   </section>
 
   <footer>
@@ -91,18 +169,19 @@ const $ = id => document.getElementById(id);
 const out = $('out'), status = $('status');
 let recognizer = null, final = '', partial = '';
 
+// ---------------------------------------------------------------- live text
 function render() {
   out.textContent = final;
   if (partial) {
     const s = document.createElement('span');
     s.className = 'partial';
-    s.textContent = (final && !final.endsWith('\n') ? ' ' : '') + partial;
+    s.textContent = (final ? ' ' : '') + partial;
     out.appendChild(s);
   }
 }
 function addFinal(text) {
   partial = '';
-  if (text) final += (final && !final.endsWith('\n') ? ' ' : '') + text;
+  if (text) final += (final ? ' ' : '') + text;
   render();
 }
 function setStatus(text, ok) { status.textContent = text; status.className = ok ? 'ok' : ''; }
@@ -123,8 +202,137 @@ function finish(stream, sampleRate) {
   addFinal(recognizer.getResult(stream).text.trim().toLowerCase());
   stream.free();
 }
+function startSession() { final = partial = ''; render(); }
+function endSession(label, ref) {
+  const text = final.trim();
+  final = partial = ''; render();
+  if (text || ref) addResult({ label, hyp: text, ref: ref || '' });
+}
 
-// ---- microphone
+// ---------------------------------------------------------------- word error rate
+// The model writes lower-case words without punctuation; hyphens split words as in training.
+const words = s => s.toLowerCase().replace(/[-‐–—]/g, ' ').replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter(Boolean);
+
+// Word-level Levenshtein alignment: ops of {t: ok|sub|ins|del, h: hyp word, r: ref word}.
+function align(ref, hyp) {
+  const n = ref.length, m = hyp.length, d = [];
+  for (let i = 0; i <= n; i++) { d.push(new Array(m + 1)); d[i][0] = i; }
+  for (let j = 0; j <= m; j++) d[0][j] = j;
+  for (let i = 1; i <= n; i++)
+    for (let j = 1; j <= m; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (ref[i - 1] === hyp[j - 1] ? 0 : 1));
+  const ops = [];
+  let i = n, j = m;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + (ref[i - 1] === hyp[j - 1] ? 0 : 1)) {
+      ops.push({ t: ref[i - 1] === hyp[j - 1] ? 'ok' : 'sub', r: ref[i - 1], h: hyp[j - 1] }); i--; j--;
+    } else if (j > 0 && d[i][j] === d[i][j - 1] + 1) { ops.push({ t: 'ins', h: hyp[j - 1] }); j--; }
+    else { ops.push({ t: 'del', r: ref[i - 1] }); i--; }
+  }
+  return ops.reverse();
+}
+function counts(ops, missed = 0) {
+  const c = { sub: 0, ins: 0, del: missed, ok: 0 };
+  for (const o of ops) c[o.t]++;
+  c.n = c.ok + c.sub + c.del;          // words actually said
+  c.wer = c.n ? (c.sub + c.ins + c.del) / c.n : 0;
+  return c;
+}
+const pct = x => (100 * x).toFixed(1) + '%';
+const plural = (k, one, many) => `${k} ${k === 1 ? one : many}`;
+function summary(c) {
+  return `WER ${pct(c.wer)} · ${plural(c.sub, 'wrong', 'wrong')}, ${plural(c.ins, 'extra', 'extra')}, `
+       + `${plural(c.del, 'missed', 'missed')} of ${plural(c.n, 'word', 'words')}`;
+}
+
+// ---------------------------------------------------------------- results list
+const results = [];
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+function addResult(r) {
+  r.marks = r.hyp ? words(r.hyp).map(() => 'ok') : [];   // manual marks for own audio
+  r.missed = 0;
+  r.typed = '';
+  results.unshift(r);
+  r.node = el('div', 'result');
+  $('results').prepend(r.node);
+  drawResult(r);
+}
+
+function drawResult(r) {
+  const node = r.node;
+  node.textContent = '';
+  const meta = el('div', 'meta');
+  const name = el('span', '', r.label);
+  const wer = el('span', 'wer');
+  meta.append(name, wer);
+  node.append(meta);
+  const hyp = words(r.hyp);
+  const ref = words(r.ref || r.typed);
+  const line = el('div', 'words');
+  node.append(line);
+
+  if (ref.length) {
+    // Automatic comparison with the correct sentence (samples, or text typed by the user).
+    const ops = align(ref, hyp);
+    for (const o of ops) {
+      if (o.t === 'ok') line.append(el('span', 'w', o.h));
+      else if (o.t === 'sub') { const w = el('span', 'w sub', o.h); w.title = 'should be: ' + o.r; line.append(w, el('span', 'fix', o.r)); }
+      else if (o.t === 'ins') { const w = el('span', 'w ins', o.h); w.title = 'extra word'; line.append(w); }
+      else { const w = el('span', 'w del', o.r); w.title = 'missed'; line.append(w); }
+      line.append(' ');
+    }
+    if (!hyp.length) line.prepend(el('span', 'note', '(nothing recognized) '));
+    wer.textContent = summary(counts(ops));
+    if (r.ref) {
+      const refLine = el('div', 'note');
+      refLine.append(el('b', '', 'Туура текст / Reference: '), r.ref);
+      node.append(refLine);
+      return;
+    }
+  } else {
+    // Manual marking: click a word to cycle ok -> wrong -> extra -> ok.
+    line.classList.add('clickable');
+    hyp.forEach((h, k) => {
+      const w = el('span', 'w' + (r.marks[k] === 'ok' ? '' : ' ' + r.marks[k]), h);
+      w.title = 'click: correct → wrong → extra';
+      w.onclick = () => { r.marks[k] = { ok: 'sub', sub: 'ins', ins: 'ok' }[r.marks[k]]; drawResult(r); };
+      line.append(w, ' ');
+    });
+    const ops = r.marks.map((t, k) => ({ t, h: hyp[k] }));
+    const c = counts(ops, r.missed);
+    const marked = c.sub + c.ins + c.del > 0;
+    wer.textContent = marked ? summary(c) : `${plural(hyp.length, 'word', 'words')} · click the wrong ones`;
+  }
+
+  // Tools for own audio: missed-word counter and typed correct text.
+  if (!r.ref) {
+    const tools = el('div', 'tools');
+    if (!r.typed) {
+      const ctr = el('span', 'counter');
+      const minus = el('button', '', '−'), plus = el('button', '', '+');
+      minus.setAttribute('aria-label', 'fewer missed words'); plus.setAttribute('aria-label', 'more missed words');
+      minus.onclick = () => { r.missed = Math.max(0, r.missed - 1); drawResult(r); };
+      plus.onclick = () => { r.missed++; drawResult(r); };
+      ctr.append('Missed words:', minus, el('b', '', r.missed), plus);
+      tools.append(ctr);
+    }
+    const typeBtn = el('button', '', r.typed || r.showType ? 'Hide correct text' : 'Type the correct text…');
+    typeBtn.onclick = () => { r.showType = !(r.typed || r.showType); if (!r.showType) r.typed = ''; drawResult(r); };
+    tools.append(typeBtn);
+    node.append(tools);
+    if (r.typed || r.showType) {
+      const ta = el('textarea');
+      ta.rows = 2; ta.placeholder = 'What was actually said / Чындыгында эмне айтылды';
+      ta.value = r.typed;
+      ta.oninput = () => { r.typed = ta.value; const pos = ta.selectionStart; drawResult(r);
+        const t = r.node.querySelector('textarea'); t.focus(); t.setSelectionRange(pos, pos); };
+      node.append(ta);
+    }
+  }
+}
+
+// ---------------------------------------------------------------- microphone
 let mic = null;
 async function startMic() {
   const media = await navigator.mediaDevices.getUserMedia({
@@ -135,7 +343,8 @@ async function startMic() {
   const proc = ctx.createScriptProcessor(4096, 1, 1);
   proc.onaudioprocess = e => feed(stream, ctx.sampleRate, new Float32Array(e.inputBuffer.getChannelData(0)));
   src.connect(proc); proc.connect(ctx.destination);
-  mic = { media, ctx, stream, proc, src };
+  mic = { media, ctx, stream, proc, src, t0: new Date() };
+  startSession(); setBusy(true, true);
   $('mic').classList.add('rec'); $('micLabel').textContent = 'Токтотуу / Stop';
   setStatus('Угуп жатат… / Listening…');
 }
@@ -145,12 +354,15 @@ function stopMic() {
   m.media.getTracks().forEach(t => t.stop());
   finish(m.stream, m.ctx.sampleRate);
   m.ctx.close();
+  endSession('Микрофон / Microphone, ' + m.t0.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  setBusy(false);
   $('mic').classList.remove('rec'); $('micLabel').textContent = 'Микрофон / Microphone';
   setStatus('Даяр / Ready', true);
 }
 $('mic').onclick = () => (mic ? stopMic() : startMic().catch(e => setStatus('Микрофон жеткиликсиз / Microphone unavailable: ' + e.message)));
 
-// ---- audio file: decode, resample to 16 kHz mono and normalize the level
+// ---------------------------------------------------------------- audio file
+// Decode, resample to 16 kHz mono and normalize the level.
 async function toPcm16k(buf) {
   const decoded = await new AudioContext().decodeAudioData(buf);
   const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
@@ -161,15 +373,16 @@ async function toPcm16k(buf) {
   return pcm;
 }
 let busy = false;
-function setBusy(b) {
+function setBusy(b, keepMic) {
   busy = b;
   document.querySelectorAll('#samples button').forEach(x => x.disabled = b);
   $('file').disabled = b; $('fileLabel').classList.toggle('disabled', b);
+  if (!keepMic) $('mic').disabled = b;
 }
 $('file').onchange = async e => {
   const f = e.target.files[0]; e.target.value = '';
   if (!f || busy) return;
-  setBusy(true); $('ref').textContent = '';
+  setBusy(true); startSession();
   setStatus('Иштетилүүдө… / Processing ' + f.name + '…');
   try {
     const pcm = await toPcm16k(await f.arrayBuffer());
@@ -180,17 +393,17 @@ $('file').onchange = async e => {
       await new Promise(r => setTimeout(r, 0));
     }
     finish(stream, 16000);
-    final += final ? '\n' : '';
+    endSession(f.name);
     setStatus('Даяр / Ready: ' + f.name, true);
   } catch (err) { setStatus('Ката / Error: ' + err.message); }
   setBusy(false);
 };
 
-// ---- samples: play the clip and feed the audio as it plays, so the text streams in
-let samples = [];
+// ---------------------------------------------------------------- samples
+// Play the clip and feed the audio as it plays, so the text streams in.
 async function runSample(s, btn) {
-  if (busy || mic) return;
-  setBusy(true); btn.classList.add('playing'); $('ref').textContent = '';
+  if (busy) return;
+  setBusy(true); btn.classList.add('playing'); startSession();
   setStatus('Иштетилүүдө… / Processing sample…');
   try {
     const pcm = await toPcm16k(await (await fetch(s.file)).arrayBuffer());
@@ -208,28 +421,169 @@ async function runSample(s, btn) {
       step();
     });
     finish(stream, 16000);
-    final += final ? '\n' : '';
-    $('ref').innerHTML = '<b>Туура текст / Reference:</b> ';
-    $('ref').append(s.text);
+    endSession(btn.textContent.replace('▶ ', '') + ' — ' + s.source, s.text);
     setStatus('Даяр / Ready', true);
   } catch (err) { setStatus('Ката / Error: ' + err.message); }
   btn.classList.remove('playing'); setBusy(false);
 }
 fetch('samples/samples.json').then(r => r.json()).then(list => {
-  samples = list;
   list.forEach((s, i) => {
     const b = document.createElement('button');
     b.textContent = '▶ ' + (s.source.startsWith('FLEURS') ? 'FLEURS ' : 'Common Voice ') + (i % 3 + 1);
     b.title = s.text;
-    b.disabled = !recognizer;
+    b.disabled = !recognizer || busy;
     b.onclick = () => runSample(s, b);
     $('samples').appendChild(b);
   });
 }).catch(() => { $('samples').textContent = 'Samples unavailable.'; });
 
-$('copy').onclick = () => navigator.clipboard.writeText(final);
-$('clear').onclick = () => { final = partial = ''; render(); };
+$('copy').onclick = () => navigator.clipboard.writeText(results.map(r => r.hyp).reverse().join('\n'));
+$('clear').onclick = () => { results.length = 0; $('results').textContent = ''; };
 
+// ---------------------------------------------------------------- research section (built on first open)
+$('research').addEventListener('toggle', () => { if ($('research').open && !$('researchBody').hasChildNodes()) buildResearch(); });
+let lastW = 0, resizeTimer;
+addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => {
+  if ($('research').open && Math.abs($('researchBody').clientWidth - lastW) > 40) { $('researchBody').textContent = ''; buildResearch(); } }, 200); });
+
+function buildResearch() {
+  const R = window.RESEARCH;
+  const body = $('researchBody');
+  body.innerHTML = R.intro;
+  lastW = body.clientWidth;
+  const W = Math.max(300, Math.min(700, lastW));     // charts are drawn at the real width so text stays 12px
+
+  body.append(el('h3', '', 'Training data'));
+  body.append(barChart(R.data.map(d => ({ label: d.name, value: d.hours, note: d.note })), 'hours', 'Hours of speech by source', W));
+  body.append(el('p', 'caption', R.dataCaption));
+
+  body.append(el('h3', '', 'Accuracy of each model version'));
+  body.append(lineChart({
+    W, x: R.versions.map(v => v.name), unit: '%', yLabel: 'Word error rate, %',
+    series: R.sets.map((s, k) => ({ name: s, color: `var(--series-${k + 1})`, values: R.versions.map(v => v.wer[k]),
+      ref: R.vosk[k], refName: 'Vosk ' + s })),
+    refLabel: 'dashed: Vosk model (main alternative)'
+  }));
+  body.append(el('p', 'caption', R.versionsCaption));
+
+  body.append(el('h3', '', 'More epochs alone over-fit; new data helps'));
+  body.append(lineChart({
+    W, x: R.epochs.x.map(String), xNum: R.epochs.x, unit: '%', yLabel: 'HIVA test WER, %', xLabel: 'training epoch',
+    series: R.epochs.runs.map((r, k) => ({ name: r.name, color: `var(--series-${k + 1})`, values: R.epochs.x.map(e => r.wer[e] ?? null) })),
+  }));
+  body.append(el('p', 'caption', R.epochsCaption));
+
+  body.append(el('h3', '', 'All results'));
+  const wrap = el('div', 'tablewrap'), t = el('table');
+  t.innerHTML = '<thead><tr><th>Model</th>' + R.sets.map(s => `<th>${s}</th>`).join('') + '</tr></thead>';
+  const tb = el('tbody');
+  for (const r of R.table) {
+    const tr = el('tr', r.best ? 'best' : '');
+    tr.append(el('td', '', r.name));
+    r.wer.forEach(w => tr.append(el('td', '', w.toFixed(1) + '%')));
+    tb.append(tr);
+  }
+  t.append(tb); wrap.append(t); body.append(wrap);
+  body.append(el('p', 'caption', R.tableCaption));
+  const more = el('div'); more.innerHTML = R.outro; body.append(more);
+}
+
+// Horizontal bar chart (single series): one colour, values labelled at the bar ends, hover tooltip.
+function barChart(rows, unit, title, W) {
+  const box = el('div', 'chart'), tip = el('div', 'tip');
+  const narrow = W < 520;                            // phone: label above each bar
+  const rowH = narrow ? 44 : 30, left = narrow ? 2 : 190, right = 52, top = 6, H = top + rows.length * rowH + 22;
+  const max = Math.max(...rows.map(r => r.value)), sx = v => left + (W - left - right) * v / max;
+  const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', title);
+  const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  for (const v of niceTicks(0, max, 4)) {
+    svg.append(mk('line', { x1: sx(v), x2: sx(v), y1: top, y2: H - 20, stroke: 'var(--grid)' }));
+    const tx = mk('text', { x: sx(v), y: H - 4, 'text-anchor': 'middle' }); tx.textContent = v; svg.append(tx);
+  }
+  rows.forEach((r, i) => {
+    const y = top + i * rowH, bh = 16, by = narrow ? y + 20 : y + (rowH - bh) / 2;
+    const name = narrow ? mk('text', { x: left, y: y + 14, class: 'lbl' }) : mk('text', { x: left - 10, y: by + 12, 'text-anchor': 'end', class: 'lbl' });
+    name.textContent = r.label; svg.append(name);
+    const w = Math.max(2, sx(r.value) - left);
+    // bar anchored at the baseline, 4px rounded data end
+    svg.append(mk('path', { d: `M${left},${by} h${w - 4} a4,4 0 0 1 4,4 v${bh - 8} a4,4 0 0 1 -4,4 h${-(w - 4)} z`, fill: 'var(--series-1)' }));
+    const val = mk('text', { x: left + w + 6, y: by + 12 }); val.textContent = r.value.toFixed(0) + ' h'; svg.append(val);
+    const hit = mk('rect', { x: 0, y, width: W, height: rowH, fill: 'transparent' });
+    hit.onmousemove = e => showTip(box, tip, e, `<b>${r.label}</b><br>${r.value.toFixed(1)} ${unit}${r.note ? '<br>' + r.note : ''}`);
+    hit.onmouseleave = () => tip.style.display = 'none';
+    svg.append(hit);
+  });
+  box.append(svg, tip);
+  return box;
+}
+
+// Line chart with markers, optional dashed reference line per series, crosshair tooltip on hover.
+function lineChart({ W, x, xNum, series, unit, yLabel, xLabel, refLabel }) {
+  const box = el('div', 'chart'), tip = el('div', 'tip');
+  const legend = el('div', 'chart-legend');
+  for (const s of series) { const sp = el('span'); const i = el('i'); i.style.background = s.color; sp.append(i, s.name); legend.append(sp); }
+  if (refLabel) { const sp = el('span'); const i = el('i', 'dash'); i.style.borderColor = 'var(--axis)'; sp.append(i, refLabel); legend.append(sp); }
+  const H = W < 520 ? 240 : 280, L = 44, Rm = 16, T = 12, B = xLabel ? 46 : 30;
+  const all = series.flatMap(s => s.values.concat(s.ref ?? [])).filter(v => v != null);
+  const ticks = niceTicks(Math.min(...all) * 0.85, Math.max(...all) * 1.05, 5);
+  const y0 = ticks[0], y1 = ticks[ticks.length - 1];
+  const x0 = xNum ? xNum[0] : 0, x1 = xNum ? xNum[xNum.length - 1] : x.length - 1;
+  const sx = i => L + (W - L - Rm) * (((xNum ? xNum[i] : i) - x0) / (x1 - x0 || 1));
+  const sy = v => T + (H - T - B) * (1 - (v - y0) / (y1 - y0));
+  const ns = 'http://www.w3.org/2000/svg', svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', yLabel);
+  const mk = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  for (const v of ticks) {
+    svg.append(mk('line', { x1: L, x2: W - Rm, y1: sy(v), y2: sy(v), stroke: 'var(--grid)' }));
+    const t = mk('text', { x: L - 8, y: sy(v) + 4, 'text-anchor': 'end' }); t.textContent = v; svg.append(t);
+  }
+  x.forEach((lab, i) => {
+    const anchor = xNum ? 'middle' : i === 0 ? 'start' : i === x.length - 1 ? 'end' : 'middle';
+    const t = mk('text', { x: xNum ? sx(i) : sx(i) + (anchor === 'start' ? -6 : anchor === 'end' ? 6 : 0), y: H - B + 18, 'text-anchor': anchor });
+    t.textContent = W < 520 && !xNum ? lab.split(':')[0] : lab; svg.append(t); });
+  if (xLabel) { const t = mk('text', { x: (L + W - Rm) / 2, y: H - 6, 'text-anchor': 'middle' }); t.textContent = xLabel; svg.append(t); }
+  const yl = mk('text', { x: 12, y: T + (H - T - B) / 2, transform: `rotate(-90 12 ${T + (H - T - B) / 2})`, 'text-anchor': 'middle' });
+  yl.textContent = yLabel; svg.append(yl);
+  for (const s of series) {
+    if (s.ref != null) svg.append(mk('line', { x1: L, x2: W - Rm, y1: sy(s.ref), y2: sy(s.ref), stroke: s.color, 'stroke-width': 1.5, 'stroke-dasharray': '5 4', opacity: .9 }));
+    let d = '', pen = false;
+    s.values.forEach((v, i) => { if (v == null) return; d += (pen ? 'L' : 'M') + sx(i) + ',' + sy(v); pen = true; });  // gaps = epochs not evaluated
+    svg.append(mk('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round' }));
+    s.values.forEach((v, i) => { if (v != null) svg.append(mk('circle', { cx: sx(i), cy: sy(v), r: 4, fill: s.color, stroke: 'var(--chart-surface)', 'stroke-width': 2 })); });
+  }
+  const cross = mk('line', { y1: T, y2: H - B, stroke: 'var(--axis)', 'stroke-width': 1, opacity: 0 });
+  svg.append(cross);
+  const hit = mk('rect', { x: L, y: T, width: W - L - Rm, height: H - T - B, fill: 'transparent' });
+  hit.onmousemove = e => {
+    const r = svg.getBoundingClientRect(), px = (e.clientX - r.left) * W / r.width;
+    let i = 0; x.forEach((_, k) => { if (Math.abs(sx(k) - px) < Math.abs(sx(i) - px)) i = k; });   // nearest x
+    cross.setAttribute('x1', sx(i)); cross.setAttribute('x2', sx(i)); cross.setAttribute('opacity', .6);
+    const lines = series.filter(s => s.values[i] != null)
+      .map(s => `<span style="color:${s.color}">●</span> ${s.name}: <b>${s.values[i].toFixed(1)}${unit}</b>` + (s.ref != null ? ` <span style="opacity:.7">(Vosk ${s.ref.toFixed(1)}${unit})</span>` : ''));
+    showTip(box, tip, e, `<b>${x[i]}</b><br>` + (lines.join('<br>') || 'no data'));
+  };
+  hit.onmouseleave = () => { tip.style.display = 'none'; cross.setAttribute('opacity', 0); };
+  svg.append(hit);
+  box.append(legend, svg, tip);
+  return box;
+}
+function niceTicks(lo, hi, n) {
+  const step0 = (hi - lo) / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 5, 10].map(k => k * mag).find(s => s >= step0);
+  const out = []; for (let v = Math.floor(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(6));
+  if (out[out.length - 1] < hi) out.push(+(out[out.length - 1] + step).toFixed(6));
+  return out;
+}
+function showTip(box, tip, e, html) {
+  tip.innerHTML = html; tip.style.display = 'block';
+  const b = box.getBoundingClientRect();
+  let left = e.clientX - b.left + 12;
+  if (left + tip.offsetWidth > b.width) left = e.clientX - b.left - tip.offsetWidth - 12;
+  tip.style.left = Math.max(0, left) + 'px'; tip.style.top = (e.clientY - b.top + 12) + 'px';
+}
+
+// ---------------------------------------------------------------- model
 // The WASM module and the model files (packed into sherpa-onnx-wasm-main-asr.data) load here.
 window.Module = {
   locateFile: (path, dir = '') => dir + path,
@@ -240,13 +594,14 @@ window.Module = {
   onRuntimeInitialized: () => {
     try {
       recognizer = createOnlineRecognizer(window.Module);
-      $('mic').disabled = false; setBusy(false);
+      setBusy(false);
       setStatus('Даяр / Ready', true);
     } catch (e) { setStatus('Модель жүктөлгөн жок / Model failed to load: ' + e.message); }
   },
 };
 })();
 </script>
+<script src="research.js"></script>
 <script src="sherpa-onnx-wasm-main-asr.js"></script>
 </body>
 </html>

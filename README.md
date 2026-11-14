@@ -13,7 +13,11 @@ device with WebAssembly and is never uploaded.
   downloads on the first visit and is then cached by the browser.
 - Output is lower-case Kyrgyz Cyrillic without punctuation; numbers come out as words.
 - The main page has six sample clips from the FLEURS (CC BY 4.0) and Common Voice (CC0) test
-  sets in `samples/`; they play while the text streams in, followed by the reference text.
+  sets in `samples/`; they play while the text streams in, then the result is compared with the correct
+  sentence: word error rate, with wrong, extra and missed words highlighted.
+- For your own recordings you can mark the wrong words (or type the correct text) to get the word error rate.
+- A collapsible research section (`research.js`) shows the training data, the results of each model version
+  and the training curves.
 
 Word error rate (lower is better):
 
