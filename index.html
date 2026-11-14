@@ -36,8 +36,14 @@
   #out .partial { color: var(--partial); }
   .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; color: var(--muted); font-size: .9rem; }
   .toolbar button { padding: 4px 12px; font-size: .85rem; }
+  .samples { display: flex; flex-wrap: wrap; gap: 8px; }
+  .samples button { padding: 6px 14px; font-size: .9rem; }
+  .samples button.playing { border-color: var(--accent); color: var(--accent); }
+  #ref { margin-top: 12px; font-size: .95rem; min-height: 1.4em; }
+  #ref b { font-weight: 600; color: var(--muted); }
+  .note { color: var(--muted); font-size: .85rem; margin: 12px 0 0; }
   footer { color: var(--muted); font-size: .85rem; }
-  .sub a { color: inherit; }
+  .sub a, .note a { color: inherit; }
   footer a { color: inherit; }
 </style>
 </head>
@@ -53,6 +59,15 @@
       <label class="btn disabled" id="fileLabel">Файл / Audio file<input type="file" id="file" accept="audio/*,video/*" disabled></label>
     </div>
     <div id="status">Модель жүктөлүүдө… / Loading model…</div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar"><span>Мисалдар / Samples</span></div>
+    <div class="samples" id="samples"></div>
+    <div id="ref"></div>
+    <p class="note">Short clips from the public <a href="https://huggingface.co/datasets/google/fleurs">FLEURS</a> (CC BY 4.0)
+      and <a href="https://commonvoice.mozilla.org/ky">Common Voice</a> (CC0) test sets, not used in training.
+      The text appears while the clip plays.</p>
   </section>
 
   <section class="card">
@@ -135,18 +150,29 @@ function stopMic() {
 }
 $('mic').onclick = () => (mic ? stopMic() : startMic().catch(e => setStatus('Микрофон жеткиликсиз / Microphone unavailable: ' + e.message)));
 
-// ---- file: decode, resample to 16 kHz mono, normalize the level, feed in chunks
+// ---- audio file: decode, resample to 16 kHz mono and normalize the level
+async function toPcm16k(buf) {
+  const decoded = await new AudioContext().decodeAudioData(buf);
+  const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+  const s = off.createBufferSource(); s.buffer = decoded; s.connect(off.destination); s.start();
+  const pcm = (await off.startRendering()).getChannelData(0);
+  let peak = 0; for (const v of pcm) peak = Math.max(peak, Math.abs(v));
+  if (peak > 0) { const g = 0.89 / peak; for (let i = 0; i < pcm.length; i++) pcm[i] *= g; }
+  return pcm;
+}
+let busy = false;
+function setBusy(b) {
+  busy = b;
+  document.querySelectorAll('#samples button').forEach(x => x.disabled = b);
+  $('file').disabled = b; $('fileLabel').classList.toggle('disabled', b);
+}
 $('file').onchange = async e => {
   const f = e.target.files[0]; e.target.value = '';
-  if (!f) return;
+  if (!f || busy) return;
+  setBusy(true); $('ref').textContent = '';
   setStatus('Иштетилүүдө… / Processing ' + f.name + '…');
   try {
-    const decoded = await new AudioContext().decodeAudioData(await f.arrayBuffer());
-    const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
-    const s = off.createBufferSource(); s.buffer = decoded; s.connect(off.destination); s.start();
-    const pcm = (await off.startRendering()).getChannelData(0);
-    let peak = 0; for (const v of pcm) peak = Math.max(peak, Math.abs(v));
-    if (peak > 0) { const g = 0.89 / peak; for (let i = 0; i < pcm.length; i++) pcm[i] *= g; }
+    const pcm = await toPcm16k(await f.arrayBuffer());
     const stream = recognizer.createStream();
     for (let i = 0; i < pcm.length; i += 16000) {     // 1 s at a time, yielding so the page stays responsive
       feed(stream, 16000, pcm.subarray(i, i + 16000));
@@ -157,7 +183,49 @@ $('file').onchange = async e => {
     final += final ? '\n' : '';
     setStatus('Даяр / Ready: ' + f.name, true);
   } catch (err) { setStatus('Ката / Error: ' + err.message); }
+  setBusy(false);
 };
+
+// ---- samples: play the clip and feed the audio as it plays, so the text streams in
+let samples = [];
+async function runSample(s, btn) {
+  if (busy || mic) return;
+  setBusy(true); btn.classList.add('playing'); $('ref').textContent = '';
+  setStatus('Иштетилүүдө… / Processing sample…');
+  try {
+    const pcm = await toPcm16k(await (await fetch(s.file)).arrayBuffer());
+    const audio = new Audio(s.file);
+    let pos = 0;
+    const stream = recognizer.createStream();
+    await audio.play().catch(() => {});    // if the browser blocks playback, decode without sound
+    await new Promise(done => {
+      const step = () => {
+        const end = audio.paused || audio.ended ? pcm.length
+          : Math.min(pcm.length, Math.floor(audio.currentTime * 16000) + 1600);
+        if (end > pos) { feed(stream, 16000, pcm.subarray(pos, end)); pos = end; }
+        pos >= pcm.length ? done() : requestAnimationFrame(step);
+      };
+      step();
+    });
+    finish(stream, 16000);
+    final += final ? '\n' : '';
+    $('ref').innerHTML = '<b>Туура текст / Reference:</b> ';
+    $('ref').append(s.text);
+    setStatus('Даяр / Ready', true);
+  } catch (err) { setStatus('Ката / Error: ' + err.message); }
+  btn.classList.remove('playing'); setBusy(false);
+}
+fetch('samples/samples.json').then(r => r.json()).then(list => {
+  samples = list;
+  list.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.textContent = '▶ ' + (s.source.startsWith('FLEURS') ? 'FLEURS ' : 'Common Voice ') + (i % 3 + 1);
+    b.title = s.text;
+    b.disabled = !recognizer;
+    b.onclick = () => runSample(s, b);
+    $('samples').appendChild(b);
+  });
+}).catch(() => { $('samples').textContent = 'Samples unavailable.'; });
 
 $('copy').onclick = () => navigator.clipboard.writeText(final);
 $('clear').onclick = () => { final = partial = ''; render(); };
@@ -172,7 +240,7 @@ window.Module = {
   onRuntimeInitialized: () => {
     try {
       recognizer = createOnlineRecognizer(window.Module);
-      $('mic').disabled = false; $('file').disabled = false; $('fileLabel').classList.remove('disabled');
+      $('mic').disabled = false; setBusy(false);
       setStatus('Даяр / Ready', true);
     } catch (e) { setStatus('Модель жүктөлгөн жок / Model failed to load: ' + e.message); }
   },

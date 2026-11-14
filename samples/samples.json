@@ -1,0 +1,44 @@
+[
+ {
+  "file": "samples/fleurs1.mp3",
+  "text": "жер кыртышы жука болгондуктан ал жерде көбүрөөк мария болушу мүмкүн бул лаванын өйдө чыгышын жеңилдеткен",
+  "source": "FLEURS (Google)",
+  "licence": "CC BY 4.0",
+  "id": "fleurs_15110708558176836697"
+ },
+ {
+  "file": "samples/fleurs2.mp3",
+  "text": "лыжа тебе турган жолду жөө баса турган жол деп элестетиңиз",
+  "source": "FLEURS (Google)",
+  "licence": "CC BY 4.0",
+  "id": "fleurs_1296261568364403884"
+ },
+ {
+  "file": "samples/fleurs3.mp3",
+  "text": "молдованын борбору кишинёв шаары жергиликтүү эл румын тилинде сүйлөйт бирок орус тили да кеңири тараган",
+  "source": "FLEURS (Google)",
+  "licence": "CC BY 4.0",
+  "id": "fleurs_4461968191120049413"
+ },
+ {
+  "file": "samples/cv1.mp3",
+  "text": "мавлян аке жеңишти көрө берип көнө түшкөнбү кыйкырган жок",
+  "source": "Common Voice 17 (Mozilla)",
+  "licence": "CC0",
+  "id": "cv_3a9662542cce0fac_common_voice_ky_25542240"
+ },
+ {
+  "file": "samples/cv2.mp3",
+  "text": "мэрия бизге жана биздин неберелерибизге таза аба бериши керек",
+  "source": "Common Voice 17 (Mozilla)",
+  "licence": "CC0",
+  "id": "cv_a01f4091b2848d3d_common_voice_ky_24561474"
+ },
+ {
+  "file": "samples/cv3.mp3",
+  "text": "бекешев ормуковдун билдирүүсүн текшерүүгө алынышын талап кылган",
+  "source": "Common Voice 17 (Mozilla)",
+  "licence": "CC0",
+  "id": "cv_1078865f8968ea38_common_voice_ky_32179351"
+ }
+]

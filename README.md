@@ -12,6 +12,8 @@ device with WebAssembly and is never uploaded.
 - Both take microphone input or an uploaded audio file (any format the browser can decode). The model
   downloads on the first visit and is then cached by the browser.
 - Output is lower-case Kyrgyz Cyrillic without punctuation; numbers come out as words.
+- The main page has six sample clips from the FLEURS (CC BY 4.0) and Common Voice (CC0) test
+  sets in `samples/`; they play while the text streams in, followed by the reference text.
 
 Word error rate (lower is better):
 
