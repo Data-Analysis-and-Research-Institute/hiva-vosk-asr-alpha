@@ -56,10 +56,27 @@ and it is labelled with the transcript of the larger model (<i>pseudo-labelling<
   tableCaption: 'Test sets: HIVA test — 503 recordings by speakers and of sentences not in training; '
     + 'FLEURS test — 751 sentences without digits; Common Voice 17 test — 1,613 recordings.',
 
+  // Alternative encoder: Light GRU, trained exactly like Zipformer v1 (same 236 h, front end, units, loss,
+  // optimizer and schedule); both decoded with greedy search, last two epochs averaged.
+  ligru: {
+    intro: `<p>We also tried a recurrent encoder, the <a href="https://arxiv.org/abs/1803.10225">Light GRU</a>
+(Ravanelli et al., 2018): six unidirectional layers of 1,024 units, about 20 million parameters (the Zipformer has 23 million),
+and naturally streaming. It was trained exactly like Zipformer v1 — same data, sound features,
+word pieces, loss and schedule — so the difference comes from the encoder alone.</p>`,
+    x: [3, 4, 6, 8],
+    ligru: [[89.6, 63.5, 55.1, 53.7], [90.8, 57.1, 47.7, 48.5], [91.6, 65.0, 54.9, 50.9]],
+    zipformer: [[44.8, 40.0, 34.8, 33.5], [32.2, 25.7, 21.2, 20.1], [44.3, 36.7, 29.2, 27.2]],
+    caption: 'Word error rate during training, both encoders on the same data (greedy decoding without the '
+      + 'browser optimisations, so the Zipformer numbers differ slightly from the tables above). The Light GRU '
+      + 'learned more slowly and levelled off at 1.6–2.4 times the Zipformer error rate; it also skipped many '
+      + 'words. It cannot look ahead and has no attention over the sentence, which the Zipformer has. '
+      + 'Its optimizer settings were tuned for the Zipformer, but a gap this large is not a tuning matter, '
+      + 'so the Zipformer stays.',
+  },
+
   outro: `
 <h3>Next</h3>
 <ul>
 <li>About 300 hours of Kyrgyz audiobooks, pseudo-labelled the same way, are being added in the next round.</li>
-<li>A Light GRU (Li-GRU) recurrent encoder is being trained on the same data as an alternative to the Zipformer.</li>
 </ul>`,
 };

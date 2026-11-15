@@ -104,6 +104,9 @@
          padding: 6px 10px; font-size: .82rem; box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; display: none; z-index: 2; }
   .tip b { font-weight: 600; }
   .caption { color: var(--muted); font-size: .85rem; margin: 2px 0 12px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0; }
+  .seg button { padding: 4px 12px; font-size: .85rem; }
+  .seg button[aria-pressed="true"] { border-color: var(--text); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -485,6 +488,30 @@ function buildResearch() {
   }
   t.append(tb); wrap.append(t); body.append(wrap);
   body.append(el('p', 'caption', R.tableCaption));
+  // Alternative encoder: Light GRU vs Zipformer, one test set at a time.
+  const G = R.ligru;
+  body.append(el('h3', '', 'Alternative tried: Light GRU encoder'));
+  const gi = el('div'); gi.innerHTML = G.intro; body.append(gi);
+  const seg = el('div', 'seg'), slot = el('div');
+  const draw = k => {
+    seg.querySelectorAll('button').forEach((b, j) => b.setAttribute('aria-pressed', j === k));
+    slot.textContent = '';
+    slot.append(lineChart({ W, x: G.x.map(String), xNum: G.x, unit: '%', yLabel: R.sets[k] + ' WER, %', xLabel: 'training epoch',
+      series: [{ name: 'Zipformer', color: 'var(--series-1)', values: G.zipformer[k] },
+               { name: 'Light GRU', color: 'var(--series-2)', values: G.ligru[k] }] }));
+  };
+  R.sets.forEach((name, k) => { const b = el('button', '', name); b.onclick = () => draw(k); seg.append(b); });
+  body.append(seg, slot); draw(0);
+  const gw = el('div', 'tablewrap'), gt = el('table');
+  gt.innerHTML = '<thead><tr><th>Epoch 8</th>' + R.sets.map(n => `<th>${n}</th>`).join('') + '</tr></thead>';
+  const gb = el('tbody');
+  for (const [name, v] of [['Zipformer', G.zipformer], ['Light GRU', G.ligru]]) {
+    const tr = el('tr', name === 'Zipformer' ? 'best' : '');
+    tr.append(el('td', '', name)); v.forEach(r => tr.append(el('td', '', r[r.length - 1].toFixed(1) + '%'))); gb.append(tr);
+  }
+  gt.append(gb); gw.append(gt); body.append(gw);
+  body.append(el('p', 'caption', G.caption));
+
   const more = el('div'); more.innerHTML = R.outro; body.append(more);
 }
 
