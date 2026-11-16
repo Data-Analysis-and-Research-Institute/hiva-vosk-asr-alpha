@@ -24,8 +24,8 @@ Word error rate (lower is better):
 
 | Test set | Zipformer (main page) | Vosk (`vosk/`) |
 |---|---|---|
-| Common Voice 17 test | 16.5% | 14.5% |
-| FLEURS test (sentences without digits) | 12.9% | 14.0% |
+| Common Voice 17 test | 16.5% | 14.4% |
+| FLEURS test (sentences without digits) | 12.9% | 13.2% |
 | HIVA test (unseen speakers and sentences) | 28.8% | 27.5% |
 
 This is an alpha release. A larger server-side model is more accurate.

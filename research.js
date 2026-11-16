@@ -24,7 +24,7 @@ and it is labelled with the transcript of the larger model (<i>pseudo-labelling<
     + 'Version 1 was trained on 236 hours of transcribed speech, version 4 on 532 hours in all.',
 
   sets: ['HIVA test', 'FLEURS test', 'Common Voice 17 test'],
-  vosk: [27.5, 14.0, 14.5],
+  vosk: [27.5, 13.2, 14.4],
   versions: [
     { name: 'v1: transcribed speech', wer: [33.1, 19.9, 26.7] },
     { name: 'v2: + 42 h parliament', wer: [30.6, 16.8, 21.7] },
@@ -52,7 +52,7 @@ and it is labelled with the transcript of the larger model (<i>pseudo-labelling<
     + 'like the HIVA recordings — brought it below 29%.',
 
   table: [
-    { name: 'Vosk small model (lm2), main alternative', wer: [27.5, 14.0, 14.5] },
+    { name: 'Vosk small model (lm2), main alternative', wer: [27.5, 13.2, 14.4] },
     { name: 'Zipformer v1, epoch 10', wer: [33.1, 19.9, 26.7] },
     { name: 'Zipformer v1, epoch 20 (over-trained)', wer: [36.4, 22.7, 28.8] },
     { name: 'Zipformer v2, epoch 16', wer: [30.6, 16.8, 21.7] },
