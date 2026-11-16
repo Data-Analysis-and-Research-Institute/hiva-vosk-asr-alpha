@@ -24,16 +24,16 @@ Word error rate (lower is better):
 
 | Test set | Zipformer (main page) | Vosk (`vosk/`) |
 |---|---|---|
-| Common Voice 17 test | 16.5% | 14.4% |
-| FLEURS test (sentences without digits) | 12.9% | 13.2% |
-| HIVA test (unseen speakers and sentences) | 28.8% | 27.5% |
+| Common Voice 17 test | 15.5% | 14.4% |
+| FLEURS test (sentences without digits) | 12.4% | 13.2% |
+| HIVA test (unseen speakers and sentences) | 27.7% | 27.5% |
 
 This is an alpha release. A larger server-side model is more accurate.
 
 ## Zipformer model
 
 The main page runs a streaming Zipformer transducer (icefall, about 23M parameters, int8) with no
-separate language model. Besides the training data of the Vosk model, it was trained on about
+separate language model, decoded with beam search (4 paths). Besides the training data of the Vosk model, it was trained on about
 118 hours of Kyrgyz parliament speech and 178 hours of Kyrgyz audiobooks, labelled automatically
 (chunks where two Vosk models mostly agree).
 

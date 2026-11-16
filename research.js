@@ -1,5 +1,6 @@
 // Numbers for the research section of index.html. WER = word error rate, %, greedy decoding of the
-// int8 browser model with sherpa-onnx (Vosk: its own decoder with the language model).
+// int8 browser model with sherpa-onnx unless a row says beam search (Vosk: its own decoder with the
+// language model). The page itself decodes with beam search (4 paths) since 2026-11-16.
 window.RESEARCH = {
   intro: `
 <p>The model is a streaming <a href="https://github.com/k2-fsa/icefall">Zipformer</a> transducer with about
@@ -57,10 +58,12 @@ and it is labelled with the transcript of the larger model (<i>pseudo-labelling<
     { name: 'Zipformer v1, epoch 20 (over-trained)', wer: [36.4, 22.7, 28.8] },
     { name: 'Zipformer v2, epoch 16', wer: [30.6, 16.8, 21.7] },
     { name: 'Zipformer v3, epoch 24', wer: [30.3, 15.5, 19.3] },
-    { name: 'Zipformer v4, epoch 30 (this page)', wer: [28.8, 12.9, 16.5], best: true },
+    { name: 'Zipformer v4, epoch 30, greedy search', wer: [28.8, 12.9, 16.5] },
+    { name: 'Zipformer v4, beam search with 4 paths (this page)', wer: [27.7, 12.4, 15.5], best: true },
   ],
   tableCaption: 'Test sets: HIVA test — 503 recordings by speakers and of sentences not in training; '
-    + 'FLEURS test — 751 sentences without digits; Common Voice 17 test — 1,613 recordings.',
+    + 'FLEURS test — 751 sentences without digits; Common Voice 17 test — 1,613 recordings. '
+    + 'The charts above use greedy search; the page keeps 4 candidate transcripts (beam search), about 1 point better.',
 
   // Alternative encoder: Light GRU, trained exactly like Zipformer v1 (same 236 h, front end, units, loss,
   // optimizer and schedule); both decoded with greedy search, last two epochs averaged.
