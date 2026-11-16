@@ -8,7 +8,8 @@ device with WebAssembly and is never uploaded.
 - The main page uses a streaming Zipformer model in [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)
   (about 42 MB download): text appears while you speak.
 - [`vosk/`](https://data-analysis-and-research-institute.github.io/hiva-vosk-asr-alpha/vosk/) uses a
-  Vosk model in [vosk-browser](https://github.com/ccoreilly/vosk-browser) (about 60 MB). It is more accurate.
+  Vosk model in [vosk-browser](https://github.com/ccoreilly/vosk-browser) (about 60 MB). It is more accurate
+  on HIVA and Common Voice; the Zipformer is more accurate on FLEURS.
 - Both take microphone input or an uploaded audio file (any format the browser can decode). The model
   downloads on the first visit and is then cached by the browser.
 - Output is lower-case Kyrgyz Cyrillic without punctuation; numbers come out as words.
@@ -23,9 +24,9 @@ Word error rate (lower is better):
 
 | Test set | Zipformer (main page) | Vosk (`vosk/`) |
 |---|---|---|
-| Common Voice 17 test | 19.3% | 14.5% |
-| FLEURS test (sentences without digits) | 15.5% | 14.0% |
-| HIVA test (unseen speakers and sentences) | 30.3% | 27.5% |
+| Common Voice 17 test | 16.5% | 14.5% |
+| FLEURS test (sentences without digits) | 12.9% | 14.0% |
+| HIVA test (unseen speakers and sentences) | 28.8% | 27.5% |
 
 This is an alpha release. A larger server-side model is more accurate.
 
@@ -33,7 +34,8 @@ This is an alpha release. A larger server-side model is more accurate.
 
 The main page runs a streaming Zipformer transducer (icefall, about 23M parameters, int8) with no
 separate language model. Besides the training data of the Vosk model, it was trained on about
-118 hours of Kyrgyz parliament speech labelled automatically (chunks where two Vosk models mostly agree).
+118 hours of Kyrgyz parliament speech and 178 hours of Kyrgyz audiobooks, labelled automatically
+(chunks where two Vosk models mostly agree).
 
 ## Vosk model
 

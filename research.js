@@ -6,8 +6,8 @@ window.RESEARCH = {
 23 million parameters, quantised to 8 bits so that it fits in a ~42 MB download. It reads audio in 0.32-second
 chunks and has no separate language model, so it runs in real time in the browser.</p>
 <p>It is trained in rounds. The first round uses manually transcribed speech. Later rounds add speech that
-nobody transcribed by hand: Jogorku Kenesh (parliament) sessions, transcribed automatically by two different
-Vosk models. A 10–20 second chunk is kept only when the two transcripts agree on at least 80–90% of the words,
+nobody transcribed by hand — Jogorku Kenesh (parliament) sessions and Kyrgyz audiobooks — transcribed
+automatically by two different Vosk models. A 10–20 second chunk is kept only when the two transcripts agree on at least 80–90% of the words,
 and it is labelled with the transcript of the larger model (<i>pseudo-labelling</i>). Every chunk is also used at
 0.9× and 1.1× speed.</p>`,
 
@@ -18,9 +18,10 @@ and it is labelled with the transcript of the larger model (<i>pseudo-labelling<
     { name: 'FLEURS train + dev', hours: 6.4, note: 'Google' },
     { name: 'Parliament, ≤10% disagreement', hours: 41.9, note: 'pseudo-labels, added in version 2' },
     { name: 'Parliament, 10–20% disagreement', hours: 76.6, note: 'pseudo-labels, added in version 3' },
+    { name: 'Audiobooks, ≤20% disagreement', hours: 178.2, note: 'pseudo-labels, 52,085 clips, added in version 4' },
   ],
   dataCaption: 'Hours of speech per source, before the 0.9× / 1.1× speed copies that triple the training set. '
-    + 'Version 1 was trained on 236 hours of transcribed speech, version 3 on 354 hours in all.',
+    + 'Version 1 was trained on 236 hours of transcribed speech, version 4 on 532 hours in all.',
 
   sets: ['HIVA test', 'FLEURS test', 'Common Voice 17 test'],
   vosk: [27.5, 14.0, 14.5],
@@ -28,30 +29,35 @@ and it is labelled with the transcript of the larger model (<i>pseudo-labelling<
     { name: 'v1: transcribed speech', wer: [33.1, 19.9, 26.7] },
     { name: 'v2: + 42 h parliament', wer: [30.6, 16.8, 21.7] },
     { name: 'v3: + 118 h parliament', wer: [30.3, 15.5, 19.3] },
+    { name: 'v4: + 178 h audiobooks', wer: [28.8, 12.9, 16.5] },
   ],
   versionsCaption: 'Word error rate on three test sets that were not used for training (lower is better). '
-    + 'Each round of parliament pseudo-labels closed part of the gap to the Vosk model (dashed lines), '
-    + 'which has a large lexicon and a language model that this small streaming model does not.',
+    + 'Each round of pseudo-labels closed part of the gap to the Vosk model (dashed lines); with the audiobooks '
+    + 'the Zipformer is now better than Vosk on FLEURS. Vosk still leads on the other two sets: it has '
+    + 'a large lexicon and a language model that this small streaming model does not.',
 
   epochs: {
-    x: [10, 12, 14, 16, 20, 22, 24],
+    x: [10, 12, 14, 16, 20, 22, 24, 28, 30],
     runs: [
       { name: 'transcribed speech only', wer: { 10: 33.1, 12: 34.0, 14: 34.8, 16: 35.2, 20: 36.4 } },
       { name: '+ 42 h parliament (from epoch 10)', wer: { 12: 31.7, 14: 31.1, 16: 30.6 } },
       { name: '+ 118 h parliament (from epoch 16)', wer: { 20: 30.3, 22: 30.6, 24: 30.3 } },
+      { name: '+ 178 h audiobooks (from epoch 24)', wer: { 28: 28.6, 30: 28.8 } },
     ],
   },
   epochsCaption: 'HIVA test word error rate during training. With only the transcribed speech, training past '
     + 'epoch 10 made the model worse on new speakers: many HIVA recordings read the same prompts, and the model '
     + 'started to memorise them. Continuing with parliament speech instead brought it down to about 30%; the second '
-    + 'parliament round mainly helped on FLEURS and Common Voice (chart above).',
+    + 'parliament round mainly helped on FLEURS and Common Voice (chart above). The audiobooks — read speech, '
+    + 'like the HIVA recordings — brought it below 29%.',
 
   table: [
     { name: 'Vosk small model (lm2), main alternative', wer: [27.5, 14.0, 14.5] },
     { name: 'Zipformer v1, epoch 10', wer: [33.1, 19.9, 26.7] },
     { name: 'Zipformer v1, epoch 20 (over-trained)', wer: [36.4, 22.7, 28.8] },
     { name: 'Zipformer v2, epoch 16', wer: [30.6, 16.8, 21.7] },
-    { name: 'Zipformer v3, epoch 24 (this page)', wer: [30.3, 15.5, 19.3], best: true },
+    { name: 'Zipformer v3, epoch 24', wer: [30.3, 15.5, 19.3] },
+    { name: 'Zipformer v4, epoch 30 (this page)', wer: [28.8, 12.9, 16.5], best: true },
   ],
   tableCaption: 'Test sets: HIVA test — 503 recordings by speakers and of sentences not in training; '
     + 'FLEURS test — 751 sentences without digits; Common Voice 17 test — 1,613 recordings.',
@@ -74,9 +80,5 @@ word pieces, loss and schedule — so the difference comes from the encoder alon
       + 'so the Zipformer stays.',
   },
 
-  outro: `
-<h3>Next</h3>
-<ul>
-<li>About 300 hours of Kyrgyz audiobooks, pseudo-labelled the same way, are being added in the next round.</li>
-</ul>`,
+  outro: '',
 };

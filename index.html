@@ -13,7 +13,7 @@
     --err-del-bg: #e2ecfb; --err-del: #1c5cab;
     /* chart roles (reference data-viz palette, light) */
     --chart-surface: #ffffff; --grid: #ebebe7; --axis: #8a8a84;
-    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
+    --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
   }
   @media (prefers-color-scheme: dark) {
     :root { --bg: #161615; --card: #20201e; --text: #ececE8; --muted: #a2a29b; --line: #34342f;
@@ -21,7 +21,7 @@
             --err-sub-bg: #4a2422; --err-sub: #ffb4ab; --err-ins-bg: #45361a; --err-ins: #ffd28a;
             --err-del-bg: #1f3350; --err-del: #a9c8f5;
             --chart-surface: #20201e; --grid: #2f2f2b; --axis: #8d8d86;
-            --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; }
+            --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500; }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
@@ -113,7 +113,7 @@
 <main>
   <h1>Кыргыз кеп таануу</h1>
   <p class="sub">Kyrgyz speech recognition that runs entirely in your browser. Audio never leaves your device.<br>
-  Streaming Zipformer model (≈42 MB); text appears while you speak. The <a href="vosk/">Vosk model page</a> is more accurate (larger download).</p>
+  Streaming Zipformer model (≈42 MB); text appears while you speak. The <a href="vosk/">Vosk model page</a> is still a little more accurate on most test sets (larger download).</p>
 
   <section class="card">
     <div class="row">
