@@ -37,6 +37,13 @@ separate language model, decoded with beam search (4 paths). Besides the trainin
 118 hours of Kyrgyz parliament speech and 178 hours of Kyrgyz audiobooks, labelled automatically
 (chunks where two Vosk models mostly agree).
 
+## Recording sentences (`collect/`)
+
+`collect/` is a page where volunteers read Kyrgyz sentences aloud. The 2,945 sentences are chosen to
+contain words and word endings that the Zipformer often gets wrong or rarely saw in training. Recordings
+(Opus or AAC, up to 20 s) and anonymous speaker answers go to a Firestore database that only the research
+team can read; volunteers sign in anonymously and no names or e-mails are stored.
+
 ## Vosk model
 
 `vosk/model/vosk-model-ky-small.tar.gz` is a Vosk small model: a Kaldi chain TDNN-F acoustic model

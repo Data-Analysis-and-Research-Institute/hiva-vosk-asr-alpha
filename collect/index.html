@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ky">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Үн жазуу</title>
+<meta name="description" content="Read Kyrgyz sentences aloud to help train Kyrgyz speech recognition.">
+<style>
+  :root {
+    --bg: #f7f7f5; --card: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
+    --accent: #c8102e; --accent-text: #ffffff; --ok: #2e7d32; --warn: #8a5300; --warn-bg: #fff0d1;
+    --bad: #b3261e; --meter: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161615; --card: #20201e; --text: #ececE8; --muted: #a2a29b; --line: #34342f;
+            --accent: #e0405a; --ok: #66bb6a; --warn: #ffd28a; --warn-bg: #45361a; --bad: #ffb4ab;
+            --meter: #3987e5; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.1rem; margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .sub a, .note a, footer a { color: inherit; }
+  .en { color: var(--muted); font-size: .85rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+           padding: 10px 18px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; }
+  .rec .dot { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  label.field { display: block; margin: 0 0 14px; }
+  label.field > span { display: block; font-weight: 600; margin-bottom: 4px; }
+  select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+           background: var(--bg); color: var(--text); width: 100%; max-width: 360px; }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; }
+  .check input { margin-top: 5px; width: 18px; height: 18px; flex: none; }
+  .consent { font-size: .95rem; }
+  .consent ul { padding-left: 20px; margin: 6px 0; }
+  #prompt { font-size: 1.45rem; line-height: 1.5; margin: 4px 0 18px; min-height: 2.2em; overflow-wrap: anywhere; }
+  .meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: .88rem; margin-bottom: 6px; }
+  .meter { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; margin: 14px 0 0; }
+  .meter i { display: block; height: 100%; width: 0; background: var(--meter); transition: width 60ms linear; }
+  #msg { min-height: 1.5em; margin-top: 12px; font-size: .95rem; color: var(--muted); }
+  #msg.ok { color: var(--ok); } #msg.warn { color: var(--warn); } #msg.bad { color: var(--bad); }
+  .notice { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 12px 14px; }
+  .note { color: var(--muted); font-size: .85rem; margin: 12px 0 0; }
+  .tips { color: var(--muted); font-size: .9rem; margin: 0; padding-left: 20px; }
+  footer { color: var(--muted); font-size: .85rem; }
+  [hidden] { display: none !important; }
+  @media (max-width: 480px) { #prompt { font-size: 1.25rem; } button { padding: 10px 14px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Үн жазуу</h1>
+  <p class="sub">Сүйлөмдөрдү үн чыгарып окуп, кыргыз тилиндеги кеп таанууну жакшыртууга жардам бериңиз.<br>
+    <span class="en">Read Kyrgyz sentences aloud to help improve Kyrgyz speech recognition.
+    <a href="../">Try the recogniser</a></span></p>
+
+  <div id="unconfigured" class="card notice" hidden>
+    Бул бет азырынча даяр эмес. <span class="en">This page is not configured yet (no Firebase project).</span>
+  </div>
+
+  <!-- step 1: consent and a few questions -->
+  <section id="consent" class="card" hidden>
+    <h2>Макулдук <span class="en">· Consent</span></h2>
+    <div class="consent">
+      <p>Сиз окуган сүйлөмдөрдүн аудио жазуулары кыргыз тилиндеги кеп таануу системаларын үйрөтүү жана
+        изилдөө үчүн колдонулат.</p>
+      <ul>
+        <li>Атыңыз, электрондук почтаңыз же башка жеке маалыматыңыз сакталбайт: ар бир катышуучуга кокус код берилет.</li>
+        <li>Жазуулар жана төмөнкү суроолорго жооптор (жаш курагы, жынысы, аймагы) коммерциялык эмес изилдөө
+          максатында <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> лицензиясы менен жарыяланышы мүмкүн.</li>
+        <li>Сүйлөмдөрдү окуудан мурун жеке маалыматты (ат, дарек, телефон) айтпаңыз.</li>
+        <li>Каалаган убакта токтото аласыз.</li>
+      </ul>
+      <p class="en">Your recordings of the sentences are used to train and study Kyrgyz speech recognition. No name
+        or e-mail is stored; you get a random code. Recordings and your answers below may be published for
+        non-commercial research under CC BY-NC-SA 4.0. Don't say personal details. You can stop at any time.</p>
+    </div>
+    <label class="field"><span>Жашыңыз <span class="en">· Age</span></span>
+      <select id="age"><option value="">—</option><option>18–29</option><option>30–44</option><option>45–59</option><option>60+</option></select></label>
+    <label class="field"><span>Жынысыңыз <span class="en">· Gender</span></span>
+      <select id="gender"><option value="">—</option><option value="f">Аял · Female</option><option value="m">Эркек · Male</option><option value="x">Айткым келбейт · Prefer not to say</option></select></label>
+    <label class="field"><span>Кайсы аймактансыз? <span class="en">· Where are you from?</span></span>
+      <select id="region"><option value="">—</option>
+        <option>Бишкек</option><option>Чүй облусу</option><option>Ысык-Көл облусу</option><option>Нарын облусу</option>
+        <option>Талас облусу</option><option>Жалал-Абад облусу</option><option>Ош шаары</option><option>Ош облусу</option>
+        <option>Баткен облусу</option><option value="abroad">Кыргызстандан тышкары · Outside Kyrgyzstan</option></select></label>
+    <label class="field"><span>Кыргыз тили – эне тилиңизби? <span class="en">· Is Kyrgyz your first language?</span></span>
+      <select id="native"><option value="">—</option><option value="yes">Ооба · Yes</option><option value="no">Жок · No</option></select></label>
+    <label class="check"><input type="checkbox" id="adult"><span>Мен 18 жаштан жогорумун. <span class="en">I am 18 or older.</span></span></label>
+    <label class="check"><input type="checkbox" id="agree"><span>Жогорудагы шарттарга макулмун. <span class="en">I agree to the terms above.</span></span></label>
+    <div class="row" style="margin-top:14px"><button id="start" class="primary" disabled>Баштоо · Start</button></div>
+  </section>
+
+  <!-- step 2: record -->
+  <section id="record" class="card" hidden>
+    <div class="meta"><span>Бул сүйлөмдү үн чыгарып окуңуз <span class="en">· Read this sentence aloud</span></span>
+      <span id="count"></span></div>
+    <div id="prompt"></div>
+    <div class="row">
+      <button id="rec" class="primary"><span class="dot"></span><span id="recLabel">Жаздыруу · Record</span></button>
+      <button id="play" disabled>▶ Угуу · Listen</button>
+      <button id="send" disabled>Жөнөтүү · Send</button>
+      <button id="skip">Өткөрүү · Skip</button>
+    </div>
+    <div class="meter" aria-hidden="true"><i id="level"></i></div>
+    <div id="msg" role="status"></div>
+  </section>
+
+  <section class="card">
+    <ul class="tips">
+      <li>Тынч жерде, телефонду оозуңуздан 20–30 см алыс кармап окуңуз. <span class="en">Quiet place, phone 20–30 cm away.</span></li>
+      <li>Табигый, кадимки ылдамдыкта окуңуз. Ката кетсе – кайра жаздырыңыз. <span class="en">Natural speed; re-record if you slip.</span></li>
+      <li>Сүйлөмдө ката же түшүнүксүз сөз болсо – «Өткөрүү» басыңыз. <span class="en">Skip sentences with typos or words you can't read.</span></li>
+      <li>Боштук (Space) – жаздыруу / токтотуу, Enter – жөнөтүү. <span class="en">Space: record/stop, Enter: send.</span></li>
+    </ul>
+  </section>
+
+  <footer>Audio is stored in a private database used only by the research team.
+    <a href="https://github.com/Data-Analysis-and-Research-Institute/hiva-vosk-asr-alpha">Project on GitHub</a></footer>
+</main>
+
+<script src="firebase-config.js"></script>
+<script type="module">
+const $ = id => document.getElementById(id);
+const cfg = window.FIREBASE_CONFIG || {};
+const MIN_S = 1.0, MAX_S = 20;            // seconds
+const PREF = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm'];
+const store = {                            // per-browser conveniences; the page works without them
+  get(k, d) { try { const v = localStorage.getItem('collect.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('collect.' + k, JSON.stringify(v)); } catch {} },
+};
+
+if (!cfg.apiKey) {
+  $('unconfigured').hidden = false;
+} else {
+  start().catch(e => { console.error(e); $('unconfigured').hidden = false;
+    $('unconfigured').textContent = 'Error: ' + e.message; });
+}
+
+async function start() {
+  const V = '10.12.2', base = `https://www.gstatic.com/firebasejs/${V}/`;
+  const [{ initializeApp }, A, F] = await Promise.all([
+    import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]);
+  const app = initializeApp(cfg);
+  const auth = A.getAuth(app), db = F.getFirestore(app);
+  const user = (await A.signInAnonymously(auth)).user;
+  const prompts = await (await fetch('prompts.json')).json();
+
+  // ------------------------------------------------ consent
+  const speakerRef = F.doc(db, 'speakers', user.uid);
+  let speaker = null;
+  try { const s = await F.getDoc(speakerRef); if (s.exists()) speaker = s.data(); } catch (e) { console.warn(e); }
+  const fields = ['age', 'gender', 'region', 'native'];
+  const ready = () => fields.every(f => $(f).value) && $('adult').checked && $('agree').checked;
+  [...fields, 'adult', 'agree'].forEach(f => $(f).addEventListener('change', () => $('start').disabled = !ready()));
+  if (speaker) showRecorder();
+  else $('consent').hidden = false;
+  $('start').onclick = async () => {
+    $('start').disabled = true;
+    const data = Object.fromEntries(fields.map(f => [f, $(f).value]));
+    await F.setDoc(speakerRef, { ...data, consent: 'v1', consentAt: F.serverTimestamp() });
+    $('consent').hidden = true;
+    showRecorder();
+  };
+
+  // ------------------------------------------------ prompt order: shuffled once per browser, skipping done ones
+  let order = store.get('order', null);
+  if (!order || order.length !== prompts.length) {
+    order = prompts.map((_, i) => i);
+    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    store.set('order', order);
+  }
+  let pos = store.get('pos', 0), done = store.get('done', 0);
+  const current = () => prompts[order[pos % order.length]];
+  function showPrompt() {
+    $('prompt').textContent = current().t;
+    $('count').textContent = done ? `${done} жазылды · recorded` : '';
+  }
+  function next() { pos++; store.set('pos', pos); reset(); showPrompt(); }
+  function showRecorder() { $('record').hidden = false; showPrompt(); }
+
+  // ------------------------------------------------ recording
+  let discard = false, stream = null, rec = null, chunks = [], blob = null, audioUrl = null, meterRaf = 0, t0 = 0, dur = 0, stats = null;
+  const mime = PREF.find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+  function msg(text, cls = '') { $('msg').textContent = text; $('msg').className = cls; }
+  function reset() {
+    blob = null; stats = null; if (audioUrl) URL.revokeObjectURL(audioUrl); audioUrl = null;
+    $('play').disabled = $('send').disabled = true; msg('');
+  }
+  async function getStream() {
+    if (stream) return stream;
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true,
+      noiseSuppression: false, autoGainControl: true } });
+    return stream;
+  }
+  async function startRec() {
+    reset();
+    try { await getStream(); } catch (e) { msg('Микрофонго уруксат жок · Microphone not available: ' + e.message, 'bad'); return; }
+    chunks = [];
+    rec = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : {});
+    rec.ondataavailable = e => e.data.size && chunks.push(e.data);
+    rec.onstop = finish;
+    rec.start();
+    t0 = performance.now();
+    $('rec').classList.add('rec'); $('recLabel').textContent = 'Токтотуу · Stop';
+    meter();
+    msg('Жазылууда… · Recording…');
+    const mine = rec;
+    setTimeout(() => { if (rec === mine && rec.state === 'recording') stopRec(); }, MAX_S * 1000);
+  }
+  function stopRec() {
+    if (rec && rec.state === 'recording') rec.stop();
+    $('rec').classList.remove('rec'); $('recLabel').textContent = 'Кайра · Record again';
+    cancelAnimationFrame(meterRaf); $('level').style.width = '0';
+  }
+  function meter() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const an = ctx.createAnalyser(); an.fftSize = 1024;
+    ctx.createMediaStreamSource(stream).connect(an);
+    const buf = new Float32Array(an.fftSize);
+    const tick = () => {
+      if (!rec || rec.state !== 'recording') { ctx.close(); return; }
+      an.getFloatTimeDomainData(buf);
+      let p = 0; for (const v of buf) p = Math.max(p, Math.abs(v));
+      $('level').style.width = Math.min(100, p * 140) + '%';
+      meterRaf = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+  async function finish() {
+    if (discard) { discard = false; rec = null; return; }   // skipped while recording
+    blob = new Blob(chunks, { type: rec.mimeType || mime || 'audio/webm' });
+    audioUrl = URL.createObjectURL(blob);
+    rec = null;
+    // Quality check on the decoded audio: length, loudness, clipping.
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const ab = await ctx.decodeAudioData(await blob.arrayBuffer());
+      ctx.close();
+      const x = ab.getChannelData(0);
+      let peak = 0, ss = 0, clip = 0;
+      for (const v of x) { const a = Math.abs(v); peak = Math.max(peak, a); ss += v * v; if (a > 0.99) clip++; }
+      dur = ab.duration;
+      stats = { peak: +peak.toFixed(3), rms: +Math.sqrt(ss / x.length).toFixed(4), clip: clip / x.length };
+    } catch (e) {
+      console.warn('decode failed', e);
+      dur = (performance.now() - t0) / 1000; stats = { peak: -1, rms: -1, clip: 0 };
+    }
+    const words = current().t.split(/\s+/).length;
+    $('play').disabled = false;
+    if (dur < MIN_S || (stats.peak >= 0 && stats.peak < 0.02)) { msg('Үн угулбай калды, кайра жаздырыңыз · Too quiet or too short, please record again.', 'bad'); return; }
+    $('send').disabled = false;
+    if (stats.clip > 0.002) msg('Үн өтө катуу – телефонду алысыраак кармаңыз · Too loud; you can send it or record again.', 'warn');
+    else if (dur < words * 0.25) msg('Өтө тез окулду окшойт · That was very fast; check it by listening.', 'warn');
+    else if (dur >= MAX_S - 0.1) msg(`Жазуу ${MAX_S} секундда токтоду · Recording stopped at ${MAX_S} s.`, 'warn');
+    else msg(`${dur.toFixed(1)} с. Угуп текшериңиз же жөнөтүңүз · Listen or send.`);
+  }
+  async function send() {
+    if (!blob) return;
+    $('send').disabled = $('rec').disabled = true;
+    msg('Жөнөтүлүүдө… · Sending…');
+    try {
+      const p = current();
+      await F.addDoc(F.collection(db, 'recordings'), {
+        uid: user.uid, promptId: p.id, text: p.t, mime: blob.type, duration: +dur.toFixed(2),
+        peak: stats.peak, rms: stats.rms, audio: F.Bytes.fromUint8Array(new Uint8Array(await blob.arrayBuffer())),
+        ua: navigator.userAgent.slice(0, 200), createdAt: F.serverTimestamp(),
+      });
+      done++; store.set('done', done);
+      next();
+      msg('Рахмат! Жөнөтүлдү · Thank you, sent.', 'ok');
+    } catch (e) {
+      console.error(e);
+      $('send').disabled = false;
+      msg('Жөнөтүлгөн жок · Could not send: ' + e.message, 'bad');
+    } finally { $('rec').disabled = false; $('recLabel').textContent = 'Жаздыруу · Record'; }
+  }
+  $('rec').onclick = () => (rec && rec.state === 'recording') ? stopRec() : startRec();
+  $('play').onclick = () => audioUrl && new Audio(audioUrl).play();
+  $('send').onclick = send;
+  $('skip').onclick = () => { if (rec && rec.state === 'recording') { discard = true; stopRec(); } next(); $('recLabel').textContent = 'Жаздыруу · Record'; };
+  document.addEventListener('keydown', e => {
+    if ($('record').hidden || e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); $('rec').click(); }
+    else if (e.key === 'Enter' && !$('send').disabled) { e.preventDefault(); send(); }
+  });
+}
+</script>
+</body>
+</html>
